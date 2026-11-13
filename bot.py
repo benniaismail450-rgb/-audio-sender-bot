@@ -1,36 +1,17 @@
 import os
-from flask import Flask, request
 from gtts import gTTS
 import telebot
 
-# التوكن الجديد الخاص بك
+# توكن البوت الخاص بك
 TOKEN = '9197635738:AAFa1UMLQcV5UdUMzPrapg-KQYWS8zGpggY'
 bot = telebot.TeleBot(TOKEN)
-
-app = Flask(__name__)
-
-
-@app.route('/')
-def home():
-  return 'TTS Telegram Bot is active and running successfully!'
-
-
-@app.route(f'/{TOKEN}', methods=['POST'])
-def webhook():
-  if request.headers.get('content-type') == 'application/json':
-    json_string = request.get_data().decode('utf-8')
-    update = telebot.types.Update.de_json(json_string)
-    bot.process_new_updates([update])
-    return '', 200
-  else:
-    return 'Forbidden', 403
 
 
 @bot.message_handler(commands=['start', 'help'])
 def send_welcome(message):
   welcome_text = (
-      'مرحباً بك في بوت تحويل النص إلى صوت! 🎙️\n\n• أرسل لي أي نص (بالعربية أو'
-      ' الإنجليزية) وسأقوم بتحويله فوراً إلى رسالة صوتية مسموعة.'
+      'مرحباً بك يا إسماعيل في بوت تحويل النص إلى صوت! 🎙️\n\n• أرسل لي أي نص'
+      ' وسأقوم بتحويله فوراً إلى رسالة صوتية مسموعة.'
   )
   bot.reply_to(message, welcome_text)
 
@@ -60,9 +41,6 @@ def convert_text_to_audio(message):
 
 
 if __name__ == '__main__':
+  print('Bot is running successfully...')
   bot.remove_webhook()
-  RENDER_URL = f'https://ai-sms-ocr-bot.onrender.com/{TOKEN}'
-  bot.set_webhook(url=RENDER_URL)
-
-  port = int(os.environ.get('PORT', 10000))
-  app.run(host='0.0.0.0', port=port)
+  bot.infinity_polling()
