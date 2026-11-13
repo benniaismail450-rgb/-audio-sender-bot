@@ -7,202 +7,126 @@ from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
 TOKEN = '9197635738:AAFa1UMLQcV5UdUMzPrapg-KQYWS8zGpggY'
 bot = telebot.TeleBot(TOKEN)
 
-# قاموس لحفظ اختيارات المستخدم (اللغة + النبرة/الأسلوب)
+# قاموس لحفظ خيارات اللهجة الخاصة بكل مستخدم
 user_settings = {}
 
 
 def get_settings(chat_id):
   if chat_id not in user_settings:
-    user_settings[chat_id] = {'lang': 'ar', 'style': 'normal', 'tld': 'com'}
+    user_settings[chat_id] = {'lang': 'en', 'tld': 'com', 'slow': False}
   return user_settings[chat_id]
 
 
-# الخطوة 1: أمر البدء لعرض اللغات الأساسية
+# الخطوة 1: عرض أزرار اللهجات الحقيقية المختلفة
 @bot.message_handler(commands=['start', 'help'])
 def send_welcome(message):
   markup = InlineKeyboardMarkup(row_width=2)
   markup.add(
-      InlineKeyboardButton('🇸🇦 العربية', callback_data='lang_ar'),
-      InlineKeyboardButton('🇺🇸 الإنجليزية', callback_data='lang_en'),
-      InlineKeyboardButton('🇫🇷 الفرنسية', callback_data='lang_fr'),
-      InlineKeyboardButton('🇪🇸 الإسبانية', callback_data='lang_es'),
-      InlineKeyboardButton('🇩🇪 الألمانية', callback_data='lang_de'),
-      InlineKeyboardButton('🇹🇷 التركية', callback_data='lang_tr'),
+      InlineKeyboardButton('🇺🇸 إنجليزي (أمريكي سريح)', callback_data='voice_en_us'),
+      InlineKeyboardButton('🇬🇧 إنجليزي (بريطاني رصين)', callback_data='voice_en_uk'),
+      InlineKeyboardButton('🇦🇺 إنجليزي (أسترالي)', callback_data='voice_en_au'),
+      InlineKeyboardButton('🇮🇳 إنجليزي (هندي)', callback_data='voice_en_in'),
+      InlineKeyboardButton('🇨🇦 إنجليزي (كندي)', callback_data='voice_en_ca'),
+      InlineKeyboardButton('🇫🇷 فرنسية (رسمية)', callback_data='voice_fr'),
+      InlineKeyboardButton('🇪🇸 إسبانية', callback_data='voice_es'),
+      InlineKeyboardButton('🇩🇪 ألمانية', callback_data='voice_de'),
+      InlineKeyboardButton(
+          '🐢 إنجليزي بطيء (للتدريب والتعلم)', callback_data='voice_en_slow'
+      ),
+      InlineKeyboardButton('🎧 العربية الافتراضية', callback_data='voice_ar'),
   )
 
   welcome_text = (
-      'مرحباً بك يا إسماعيل في بوت تحويل النص إلى صوت المطور! 🎙️\n\n• الخطوة'
-      ' الأولى: اختر **اللغة** الأساسية من الأزرار أدناه:'
+      'مرحباً بك يا إسماعيل! 🎙️\n\nاختر **اللهجة أو النبرة الحقيقية** التي'
+      ' تريدها من الأزرار أدناه، وسيتغير الصوت فعلياً:'
   )
   bot.send_message(message.chat.id, welcome_text, reply_markup=markup)
 
 
-# الخطوة 2: استقبال اختيار اللغة والانتقال لاختيار النبرة/اللهجة الإبداعية
-@bot.callback_query_handler(func=lambda call: call.data.startswith('lang_'))
-def set_language(call):
+# الخطوة 2: استقبال الضغط وتغيير إعدادات الصوت البرمجية الحقيقية
+@bot.callback_query_handler(func=lambda call: call.data.startswith('voice_'))
+def set_voice_style(call):
   chat_id = call.message.chat.id
-  lang_code = call.data.split('_')[1]
+  data = call.data
   settings = get_settings(chat_id)
-  settings['lang'] = lang_code
 
-  # إنشاء لوحة أزرار اللهجات والنبرات المميزة
-  markup = InlineKeyboardMarkup(row_width=1)
-  markup.add(
-      InlineKeyboardButton(
-          '🌍 نبرة وثائقية (ناشيونال جيوغرافيك)', callback_data='style_natgeo'
-      ),
-      InlineKeyboardButton(
-          '🎖️ نبرة عسكرية (جنرال حرب)', callback_data='style_general'
-      ),
-      InlineKeyboardButton('👶 نبرة أطفال', callback_data='style_kid'),
-      InlineKeyboardButton(
-          '🎬 نبرة سينمائية تشويقية', callback_data='style_cinema'
-      ),
-      InlineKeyboardButton('🤖 نبرة روبوت آلية', callback_data='style_robot'),
-      InlineKeyboardButton('⚡ نبرة حماسية سريعة', callback_data='style_fast'),
-      InlineKeyboardButton(
-          '🎧 النبرة العادية (الافتراضية)', callback_data='style_normal'
-      ),
-  )
+  voice_name = ''
 
-  bot.answer_callback_query(call.id, text='تم حفظ اللغة، اختر النبرة الآن')
+  if data == 'voice_en_us':
+    settings['lang'], settings['tld'], settings['slow'] = 'en', 'com', False
+    voice_name = '🇺🇸 إنجليزي أمريكي'
+  elif data == 'voice_en_uk':
+    settings['lang'], settings['tld'], settings['slow'] = 'en', 'co.uk', False
+    voice_name = '🇬🇧 إنجليزي بريطاني'
+  elif data == 'voice_en_au':
+    settings['lang'], settings['tld'], settings['slow'] = 'en', 'com.au', False
+    voice_name = '🇦🇺 إنجليزي أسترالي'
+  elif data == 'voice_en_in':
+    settings['lang'], settings['tld'], settings['slow'] = 'en', 'co.in', False
+    voice_name = '🇮🇳 إنجليزي هندي'
+  elif data == 'voice_en_ca':
+    settings['lang'], settings['tld'], settings['slow'] = 'en', 'ca', False
+    voice_name = '🇨🇦 إنجليزي كندي'
+  elif data == 'voice_fr':
+    settings['lang'], settings['tld'], settings['slow'] = 'fr', 'com', False
+    voice_name = '🇫🇷 فرنسية'
+  elif data == 'voice_es':
+    settings['lang'], settings['tld'], settings['slow'] = 'es', 'com', False
+    voice_name = '🇪🇸 إسبانية'
+  elif data == 'voice_de':
+    settings['lang'], settings['tld'], settings['slow'] = 'de', 'com', False
+    voice_name = '🇩🇪 ألمانية'
+  elif data == 'voice_en_slow':
+    settings['lang'], settings['tld'], settings['slow'] = 'en', 'com', True
+    voice_name = '🐢 إنجليزي بطيء جداً'
+  elif data == 'voice_ar':
+    settings['lang'], settings['tld'], settings['slow'] = 'ar', 'com', False
+    voice_name = '🎧 العربية'
+
+  bot.answer_callback_query(call.id, text=f'تم تغيير الصوت إلى: {voice_name}')
   bot.edit_message_text(
       chat_id=chat_id,
       message_id=call.message.message_id,
       text=(
-          '✅ ممتاز! الخطوة الثانية:\nاختر **الطابع أو النبرة الإبداعية**'
-          ' التي تريد أن يقرأ بها الصوت:'
+          f'✅ تم اختيار صوتیات: **{voice_name}** بنجاح!\n\nالآن أرسل لي النص'
+          ' لتسمع الفارق الحقيقي في النبرة واللهجة.'
       ),
-      reply_markup=markup,
+      parse_mode='Markdown',
   )
 
 
-# الخطوة 3: استقبال اختيار النبرة وتجهيز النص
-@bot.callback_query_handler(func=lambda call: call.data.startswith('style_'))
-def set_style(call):
-  chat_id = call.message.chat.id
-  style_code = call.data.split('_')[1]
-  settings = get_settings(chat_id)
-  settings['style'] = style_code
-
-  style_names = {
-      'natgeo': '🌍 وثائقية (ناشيونال جيوغرافيك)',
-      'general': '🎖️ عسكرية (جنرال حرب)',
-      'kid': '👶 أطفال',
-      'cinema': '🎬 سينمائية تشويقية',
-      'robot': '🤖 روبوت آلية',
-      'fast': '⚡ حماسية سريعة',
-      'normal': '🎧 عادية',
-  }
-
-  chosen_style_name = style_names.get(style_code, 'عادية')
-
-  bot.answer_callback_query(
-      call.id, text=f'تم تفعيل النبرة: {chosen_style_name}'
-  )
-  bot.edit_message_text(
-      chat_id=chat_id,
-      message_id=call.message.message_id,
-      text=(
-          f'🎉 تم ضبط الإعدادات بنجاح!\n\n• اللغة: `{settings["lang"]}`\n•'
-          f' النبرة: **{chosen_style_name}**\n\nالآن أرسل لي أي نص وسأقوم'
-          ' بتعديله وإرساله بصوت مطابق لهذه النبرة!'
-      ),
-  )
-
-
-# معالجة النص وتعديله وفقاً للنبرة المختارة قبل تحويله لصوت
+# الخطوة 3: توليد الصوت الفعلي وإرساله
 @bot.message_handler(content_types=['text'])
 def convert_text_to_audio(message):
   chat_id = message.chat.id
-  original_text = message.text
+  text_to_convert = message.text
   settings = get_settings(chat_id)
 
-  style = settings.get('style', 'normal')
-  processed_text = original_text
-
-  # تعديل صياغة النص برمجيياً ليعطي إيحاء النبرة عند القراءة الصوتية
-  if style == 'natgeo':
-    processed_text = (
-        'في عوالم الطبيعة الساحرة، وحيث تتكشف أسرار البرية... '
-        + original_text
-        + ' .. هكذا تستمر الحياة في كوكبنا.'
-    )
-    settings['tld'] = 'com'
-    slow_speed = True  # بطء متعمد لإعطاء طابع وثائقي هادئ
-
-  elif style == 'general':
-    processed_text = (
-        'تنبيه عسكري هام. انصتوا جيداً للتعليمات الآتية: '
-        + original_text
-        + ' .. انتهى البيان.'
-    )
-    settings['tld'] = 'com'
-    slow_speed = False
-
-  elif style == 'kid':
-    processed_text = (
-        'مرحباً أصدقائي الصغار! اسمعوا هذه الحكاية الجميلة: '
-        + original_text
-        + ' .. يا لها من متعة!'
-    )
-    settings['tld'] = 'com'
-    slow_speed = False
-
-  elif style == 'cinema':
-    processed_text = (
-        'في عالم مليء بالغموض والأحداث المرتقبة... '
-        + original_text
-        + ' .. انتظرونا في الجزء القادم.'
-    )
-    settings['tld'] = 'com'
-    slow_speed = False
-
-  elif style == 'robot':
-    # إضافة تقطيع شبيه بالروبوتات
-    processed_text = '. '.join(list(original_text))
-    settings['tld'] = 'com'
-    slow_speed = False
-
-  elif style == 'fast':
-    processed_text = original_text + ' بسرعة البرق وبدون توقف.'
-    settings['tld'] = 'com'
-    slow_speed = False
-
-  else:  # العادية
-    processed_text = original_text
-    settings['tld'] = 'com'
-    slow_speed = False
-
-  processing_msg = bot.reply_to(
-      message, '🎙️ جاري هندسة الصوت وتطبيق النبرة المختارة...'
-  )
+  processing_msg = bot.reply_to(message, '🎙️ جاري توليد الصوت باللهجة المختارة...')
 
   try:
-    # توليد ملف الصوت بناءً على الإعدادات
+    # استخدام الإعدادات الحقيقية لتغيير النبرة واللهجة والسرعة
     tts = gTTS(
-        text=processed_text,
+        text=text_to_convert,
         lang=settings['lang'],
         tld=settings['tld'],
-        slow=slow_speed,
+        slow=settings['slow'],
     )
     audio_path = 'output_audio.mp3'
     tts.save(audio_path)
 
-    # إرسال الملف الصوتي كرسالة صوتية (Voice)
     with open(audio_path, 'rb') as audio:
       bot.send_voice(chat_id, audio)
 
-    # تنظيف الرسائل والملفات المؤقتة
     bot.delete_message(chat_id, processing_msg.message_id)
     if os.path.exists(audio_path):
       os.remove(audio_path)
 
   except Exception as e:
-    bot.reply_to(message, f'حدث خطأ أثناء معالجة الصوت: {e}')
+    bot.reply_to(message, f'حدث خطأ: {e}')
 
 
 if __name__ == '__main__':
-  print('Bot with styles & accents is running...')
+  print('Bot with real accent switching is running...')
   bot.remove_webhook()
   bot.infinity_polling()
