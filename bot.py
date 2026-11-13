@@ -1,5 +1,5 @@
 import os
-from gTTS import gTTS
+from gtts import gTTS
 import telebot
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
 
@@ -64,7 +64,7 @@ def set_voice_style(call):
         'natgeo',
         'ar',
         True,
-    )  # بطء متعمد لإعطاء طابع وثائقي
+    )
     style_name = 'نبرة ناشيونال جيوغرافيك (الوثائقية)'
   elif data == 'style_military':
     settings['style'], settings['lang'], settings['slow'] = (
@@ -112,9 +112,7 @@ def convert_text_to_audio(message):
   style = settings.get('style', 'normal')
   processed_text = text_to_convert
 
-  # هندسة النص وتغييره لإعطاء إيحاء اللهجة أو النبرة المطلوبة مسموعاً
   if style == 'natgeo':
-    # إضافة مقدمة وثائقية ووقفات (فواصل) تجعل محرك الصوت يقرأ ببطء وبهدوء شديد
     processed_text = (
         'في أعماق الطبيعة الساحرة ... وحيث تتكشف أسرار الكون ... '
         + text_to_convert
@@ -127,7 +125,6 @@ def convert_text_to_audio(message):
         + ' ... انتهى البيان.'
     )
   elif style == 'robot':
-    # تقطيع الحروف بمسافات ليعطي طابعاً روبوتياً متقطعاً
     processed_text = '. '.join(list(text_to_convert))
   else:
     processed_text = text_to_convert
